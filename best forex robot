@@ -1,0 +1,86 @@
+// Define constants (add semicolons)
+#define PERIOD_EMA_SHORT 8;
+#define PERIOD_EMA_LONG 14;
+#define TIMEFRAME_1H PERIOD_H1;
+#define TIMEFRAME_2H PERIOD_H2;
+#define TIMEFRAME_4H PERIOD_H4;
+
+// Account balance (replace with actual retrieval method)
+double account_balance = 10000;
+
+// Risk percentage per trade
+double risk_percent = 0.01; // 1%
+
+// Function to calculate trade size based on risk management
+double GetTradeSize() {
+  // Replace with your stop loss calculation (in pips)
+  int stop_loss = 20;
+  
+  // Convert pips to account currency (multiply by Point)
+  int stop_loss_currency = stop_loss * Point;
+  
+  // Calculate trade size based on risk percentage
+  double trade_size = account_balance * risk_percent / (stop_loss_currency * 10);
+  return(trade_size);
+}
+
+// Function to check for EMA crossover on a specific timeframe
+bool IsEMACrossover(int timeframe) {
+  // Correct usage of iMA with all required parameters
+  double ema_short = iMA(NULL, timeframe, PERIOD_EMA, PERIOD_EMA_SHORT, MODE_SMA, 0);  // Use SMA for simplicity
+  double ema_long = iMA(NULL, timeframe, PERIOD_EMA, PERIOD_EMA_LONG, MODE_SMA, 0);  // Use SMA for simplicity
+  
+  // Check if short EMA crosses above long EMA
+  return(ema_short < ema_long && iClose(timeframe) > ema_long); // Correct usage of iClose
+}
+
+// Function to check for valid candlestick pattern (replace with your logic)
+bool IsValidCandlestick(int current_bar) {
+  // Get the high, low, open, and close prices (correct usage)
+  double high = iHigh(current_bar, TIMEFRAME_1H);
+  double low = iLow(current_bar, TIMEFRAME_1H);
+  double open = iOpen(current_bar, TIMEFRAME_1H);
+  double close = iClose(current_bar, TIMEFRAME_1H);  // Corrected timeframe usage
+  
+  // Check for Doji pattern
+  bool isDoji = MathAbs(high - low) < Point * 2;
+  
+  // Check for Shooting Star pattern
+  bool isShootingStar = (high - open) > 3 * (open - low) && high > close;
+  
+  // Check for Marubozu pattern (replace with specific Marubozu definition)
+  bool isMarubozu = (high == low) || (MathAbs(high - low) < Point * 2 && (open > close || open < close));  // Placeholder Marubozu check
+
+  // Return true if any valid pattern is found
+  return(isDoji || isShootingStar || isMarubozu);
+}
+
+// Placeholder function to identify support/resistance (replace with your logic)
+double GetSupportLevel(int timeframe) {
+  // ... Your logic to identify support level based on past highs ...
+  return(0.0);
+}
+
+double GetResistanceLevel(int timeframe) {
+  // ... Your logic to identify resistance level based on past lows ...
+  return(0.0);
+}
+
+// Function to calculate take profit based on support/resistance (placeholder)
+double GetTakeProfit(double current_price, bool isLong) {
+  // Replace with your logic to identify take profit based on support/resistance or psychological levels
+  double support_level = GetSupportLevel(TIMEFRAME_4H);
+  double resistance_level = GetResistanceLevel(TIMEFRAME_4H);
+  
+  if (isLong) {
+    return(MathMax(support_level, current_price - 80 * Point));  // Take profit at nearest support or 80 pips
+  } else {
+    return(MathMin(support_level, current_price + 80 * Point));  // Take profit at nearest resistance or 80 pips (corrected for short positions)
+  }
+}
+
+// The 'OnTick' function is called repeatedly by MetaTrader  
+int OnTick() {
+  // Check if new bar on 1-hour timeframe
+  if (iNewBar(TIMEFRAME_1H)) {
+    // Check for EMA crossover on 1-hour and 2-hour timeframes
